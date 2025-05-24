@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spin & Win!</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Luckiest+Guy&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #ff4081; /* Festive pink */
+            --secondary-color: #ffc107; /* Gold/Yellow */
+            --accent-color: #7c4dff; /* Purple */
+            --text-color: #ffffff;
+            --bg-gradient-start: #6a11cb; /* Deep purple */
+            --bg-gradient-end: #2575fc; /* Bright blue */
+            --glow-color: var(--secondary-color);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-end));
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+            text-align: center;
+        }
+
+        .container {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            width: 100%;
+            max-width: 500px;
+        }
+
+        header h1 {
+            font-family: 'Luckiest Guy', cursive;
+            font-size: 2.5em;
+            margin-bottom: 25px;
+            color: var(--secondary-color);
+            text-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+            line-height: 1.2;
+        }
+
+        .wheel-section {
+            margin-bottom: 30px;
+            position: relative;
+            display: flex; /* Helps center image if it's not full width */
+            justify-content: center;
+            align-items: center;
+        }
+
+        .pointer-container {
+            position: absolute;
+            top: -10px; /* Adjust based on pointer size and wheel image */
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10; /* Above wheel and center button */
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-top: 30px solid var(--secondary-color);
+            filter: drop-shadow(0px 3px 3px rgba(0,0,0,0.4));
+        }
+        
+        #spinWheelImage {
+            width: 80vw;
+            max-width: 300px;
+            height: auto;
+            transition: transform 5s cubic-bezier(0.25, 0.1, 0.25, 1);
+            display: block; /* remove margin auto if parent is flex centering */
+            /* margin: 0 auto; */ 
+        }
+
+        .center-button-on-wheel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 5; /* Above wheel image, below pointer */
+            /* Adjust width/height based on your button.png image aspect ratio and desired size */
+            /* This will make it roughly 20% of the wheel's max diameter */
+            width: 20vw; 
+            max-width: 60px; /* e.g., 20% of 300px */
+            height: auto; /* Maintain aspect ratio */
+            pointer-events: none; /* So it doesn't interfere with any clicks if it's purely decorative */
+        }
+
+        .center-button-on-wheel img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+
+        .action-button {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            font-size: 1.1em;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 50px;
+            color: var(--bg-gradient-start);
+            background: var(--secondary-color);
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 0 10px 0px var(--glow-color), 0 0 20px 0px var(--glow-color) inset;
+            animation: pulseGlow 2s infinite ease-in-out;
+            margin-top: 15px;
+        }
+        
+        #spinButton {
+             font-size: 1.2em;
+             padding: 15px 30px;
+             margin-top: 20px;
+        }
+
+        .action-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px 5px var(--glow-color), 0 0 30px 5px var(--glow-color) inset;
+        }
+
+        .action-button:active {
+            transform: scale(0.98);
+            box-shadow: 0 0 8px 2px var(--glow-color), 0 0 15px 2px var(--glow-color) inset;
+        }
+        
+        .action-button:disabled {
+            background-color: #aaa;
+            color: #666;
+            cursor: not-allowed;
+            box-shadow: none;
+            animation: none;
+        }
+
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 10px 0px var(--glow-color), 0 0 20px 0px var(--glow-color) inset; }
+            50% { box-shadow: 0 0 15px 5px var(--glow-color), 0 0 30px 5px var(--glow-color) inset; }
+            100% { box-shadow: 0 0 10px 0px var(--glow-color), 0 0 20px 0px var(--glow-color) inset; }
+        }
+
+        .post-win-section h2, .post-win-section h3 {
+            font-family: 'Luckiest Guy', cursive;
+            color: var(--secondary-color);
+            margin-bottom: 10px;
+        }
+        .post-win-section h2 { font-size: 1.8em; }
+        .post-win-section h3 { font-size: 1.5em; }
+
+        .post-win-section p {
+            font-size: 1em;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        .post-win-section input {
+            width: calc(100% - 20px);
+            padding: 12px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border: 2px solid var(--secondary-color);
+            background: rgba(255,255,255,0.1);
+            color: var(--text-color);
+            font-size: 1em;
+        }
+        .post-win-section input::placeholder {
+            color: rgba(255,255,255,0.7);
+        }
+        .post-win-section input:focus {
+            outline: none;
+            box-shadow: 0 0 10px var(--secondary-color);
+        }
+        
+        .final-message p {
+            font-size: 1.1em;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+
+        .hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 480px) {
+            header h1 {
+                font-size: 2em;
+            }
+            .action-button, #spinButton {
+                font-size: 1em;
+                padding: 12px 25px;
+            }
+             .post-win-section h2 { font-size: 1.5em; }
+             .post-win-section h3 { font-size: 1.3em; }
+
+             .pointer-container {
+                top: -5px;
+                border-left-width: 15px;
+                border-right-width: 15px;
+                border-top-width: 25px;
+            }
+            .center-button-on-wheel {
+                /* Adjust if needed for smaller screens, max-width should handle it */
+                 max-width: 50px; /* e.g., 20% of a smaller wheel */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Spin the Wheel & Win a Guaranteed Prize!</h1>
+        </header>
+
+        <main>
+            <div class="wheel-section">
+                <div class="pointer-container"></div>
+                <img src="spin.png" alt="Spin Wheel" id="spinWheelImage">
+                <div class="center-button-on-wheel">
+                    <img src="button.png" alt="Wheel Center">
+                </div>
+            </div>
+            
+            <button id="spinButton" class="action-button">SPIN NOW</button>
+
+            <div id="postWinSection" class="post-win-section hidden">
+                <h2 id="winMessage"></h2>
+                <p id="claimInstructionText"></p>
+                
+                <form id="claimForm">
+                    <input type="text" id="userName" placeholder="Your Name" required>
+                    <input type="tel" id="userMobile" placeholder="Mobile Number (10 digits)" required pattern="[0-9]{10}" title="Please enter a valid 10-digit mobile number">
+                    <button type="submit" id="submitDetailsButton" class="action-button">SUBMIT DETAILS</button>
+                </form>
+
+                <div id="shareStepSection" class="hidden">
+                    <p id="shareInstructionText"></p>
+                    <button id="whatsappShareButton" class="action-button">Share on WhatsApp to Claim</button>
+                </div>
+            </div>
+
+            <div id="submissionSuccessSection" class="final-message hidden">
+                <p>Your prize claim has been submitted successfully!</p>
+                <p>Congratulations again! You will be contacted soon.</p>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const prizes = [
+            { name: "₹100 PayTM Cash", id: "paytm100" },
+            { name: "Movie Ticket", id: "movie" },
+            { name: "iPhone 14", id: "iphone14" },
+            { name: "Samsung TV", id: "samsungtv" },
+            { name: "Smartwatch", id: "smartwatch" },
+            { name: "Bluetooth Speaker", id: "speaker" },
+            { name: "AirPods", id: "airpods" },
+            { name: "Better Luck Next Time", id: "betterluck" }, 
+            { name: "Amazon Voucher ₹50", id: "amazon50" },
+            { name: "Free Coffee Coupon", id: "coffee" },
+            { name: "20% Discount Voucher", id: "discount20" },
+            { name: "Surprise Gift Box", id: "surprisebox" }
+        ];
+
+        const spinWheelImage = document.getElementById('spinWheelImage');
+        const spinButton = document.getElementById('spinButton');
+        
+        const postWinSection = document.getElementById('postWinSection');
+        const winMessage = document.getElementById('winMessage');
+        const claimInstructionText = document.getElementById('claimInstructionText');
+        
+        const claimForm = document.getElementById('claimForm');
+        const submitDetailsButton = document.getElementById('submitDetailsButton');
+        
+        const shareStepSection = document.getElementById('shareStepSection');
+        const shareInstructionText = document.getElementById('shareInstructionText');
+        const whatsappShareButton = document.getElementById('whatsappShareButton');
+        
+        const submissionSuccessSection = document.getElementById('submissionSuccessSection');
+
+        let isSpinning = false;
+        let currentRotation = 0;
+        let winningPrizeName = '';
+
+        const numSegments = prizes.length;
+        const segmentAngle = 360 / numSegments;
+
+        spinButton.addEventListener('click', () => {
+            if (isSpinning) return;
+            isSpinning = true;
+            spinButton.disabled = true;
+            spinButton.textContent = "SPINNING...";
+
+            postWinSection.classList.add('hidden');
+            shareStepSection.classList.add('hidden');
+            claimForm.style.display = 'block'; 
+            submitDetailsButton.style.display = 'block'; 
+            submissionSuccessSection.classList.add('hidden');
+
+            const eligiblePrizes = prizes.filter(p => p.id !== "betterluck");
+            const randomEligibleIndex = Math.floor(Math.random() * eligiblePrizes.length);
+            const winningPrize = eligiblePrizes[randomEligibleIndex];
+            winningPrizeName = winningPrize.name;
+            const actualWinningPrizeIndexOnWheel = prizes.findIndex(p => p.id === winningPrize.id);
+
+            const prizeSegmentCenter = (actualWinningPrizeIndexOnWheel * segmentAngle) + (segmentAngle / 2);
+            const randomOffsetInSegment = (Math.random() - 0.5) * (segmentAngle * 0.6);
+            const finalPrizeAngle = prizeSegmentCenter + randomOffsetInSegment;
+
+            const revolutionsForThisSpin = 7 + Math.floor(Math.random() * 3);
+            const finalAngle = currentRotation + (revolutionsForThisSpin * 360) - ((currentRotation + finalPrizeAngle) % 360) ;
+            currentRotation = finalAngle;
+
+            spinWheelImage.style.transition = 'transform 5s cubic-bezier(0.25, 0.1, 0.25, 1)';
+            spinWheelImage.style.transform = `rotate(${currentRotation}deg)`;
+            
+            setTimeout(handleSpinEnd, 5100);
+        });
+
+        function handleSpinEnd() {
+            if (!isSpinning) return;
+
+            confetti({
+                particleCount: 150,
+                spread: 90,
+                origin: { y: 0.6 }
+            });
+
+            winMessage.textContent = `Congratulations! You won ${winningPrizeName}!`;
+            claimInstructionText.textContent = "To claim your prize, please fill in your details below and then share this page with 10 WhatsApp friends.";
+            
+            spinButton.classList.add('hidden');
+            postWinSection.classList.remove('hidden');
+            shareStepSection.classList.add('hidden'); 
+            claimForm.elements.userName.value = ''; 
+            claimForm.elements.userMobile.value = '';
+        }
+
+        claimForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const userName = document.getElementById('userName').value;
+            const userMobile = document.getElementById('userMobile').value;
+
+            if (userName.trim() === '' || userMobile.trim() === '') {
+                alert('Please fill in both name and mobile number.');
+                return;
+            }
+            if (!/^[0-9]{10}$/.test(userMobile)) {
+                alert('Please enter a valid 10-digit mobile number.');
+                return;
+            }
+
+            claimForm.style.display = 'none'; 
+            shareInstructionText.textContent = "Great! Your details are noted. Now, please share this page with 10 WhatsApp friends to finalize your claim.";
+            shareStepSection.classList.remove('hidden');
+        });
+
+        whatsappShareButton.addEventListener('click', () => {
+            const pageUrl = window.location.href;
+            const shareText = `I just won a ${winningPrizeName} on this Spin & Win page! ${pageUrl} Try your luck too!`;
+            const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+            
+            window.open(whatsappUrl, '_blank');
+
+            whatsappShareButton.textContent = "SHARING...";
+            whatsappShareButton.disabled = true;
+
+            setTimeout(() => {
+                postWinSection.classList.add('hidden'); 
+                submissionSuccessSection.classList.remove('hidden');
+                
+                isSpinning = false;
+                whatsappShareButton.textContent = "Share on WhatsApp to Claim";
+                whatsappShareButton.disabled = false;
+            }, 3000); 
+        });
+
+    </script>
+</body>
+</html>
+<script type="text/javascript">
+	atOptions = {
+		'key' : '57899cb12361207003b2531230ceb359',
+		'format' : 'iframe',
+		'height' : 50,
+		'width' : 320,
+		'params' : {}
+	};
+</script>
+<script type="text/javascript" src="//www.highperformanceformat.com/57899cb12361207003b2531230ceb359/invoke.js"></script>
+<script type="text/javascript">
+	atOptions = {
+		'key' : '6d48106f84180ef4748ae77420d833aa',
+		'format' : 'iframe',
+		'height' : 250,
+		'width' : 300,
+		'params' : {}
+	};
+</script>
+<script type="text/javascript" src="//www.highperformanceformat.com/6d48106f84180ef4748ae77420d833aa/invoke.js"></script>
+<script async="async" data-cfasync="false" src="//pl26727077.profitableratecpm.com/ceed44ef8516eef61942a1fc2d9e21b4/invoke.js"></script>
+<div id="container-ceed44ef8516eef61942a1fc2d9e21b4"></div>
